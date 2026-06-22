@@ -148,4 +148,135 @@ SELECT
 		FROM COMM
 		GROUP BY ORDER_BUCKET
 		ORDER BY AVG_RATING DESC;
-		
+
+
+--CREATE PROFIT & DELIVERY COST COLUMN
+UPDATE COMM
+SET PROFIT = ROUND(
+    ORDER_VALUE
+    - DELIVERY_COST
+    - CASE
+        WHEN DISCOUNT_APPLIED = TRUE
+        THEN ORDER_VALUE * 0.10
+        ELSE 0
+      END,
+    2
+);
+
+--DISCOUNT COLUMN
+ALTER TABLE COMM
+ADD COLUMN DISCOUNT_AMOUNT NUMERIC(10,2);
+
+UPDATE COMM
+SET DISCOUNT_AMOUNT =
+CASE
+    WHEN DISCOUNT_APPLIED = TRUE THEN 100.00
+    ELSE 0.00
+END;
+
+---- % LOSS ORDERS ARE LOSS-MAKING
+--7.84% of all orders are loss-making
+SELECT ROUND(100.0*COUNT(*) FILTER (WHERE PROFIT < 0)/COUNT(*),2
+)AS LOSS_ORDER_PERCENT
+FROM COMM;
+
+
+--LOSS OF CATEGORY
+-- Beverages contribute the highest share of losses, accounting for 14.57% of total loss value, followed 
+-- closely by Household (14.37%) and Groceries 
+-- (14.30%).
+WITH LOSSES AS (
+    SELECT
+        PRODUCT_CATEGORY,
+        ABS(SUM(PROFIT)) AS TOTAL_LOSS
+    FROM COMM
+    WHERE PROFIT < 0
+    GROUP BY PRODUCT_CATEGORY
+)
+SELECT
+    PRODUCT_CATEGORY,
+    TOTAL_LOSS,
+    ROUND(
+        TOTAL_LOSS * 100.0 /
+        SUM(TOTAL_LOSS) OVER (),
+        2
+    ) AS LOSS_PERCENTAGE
+FROM LOSSES
+ORDER BY TOTAL_LOSS DESC;
+
+
+---LOSS BY CITY
+--The top 3 loss-generating cities (Haridwar, Jaipur, and Amritsar) account for 41.37% of total losses, indicating that a significant portion of profitability challenges 
+--is concentrated in a few locations.
+WITH LOSSES AS (
+    SELECT
+        CITY,
+        ABS(SUM(PROFIT)) AS TOTAL_LOSS
+    FROM COMM
+    WHERE PROFIT < 0
+    GROUP BY CITY
+)
+
+SELECT
+    CITY,
+    TOTAL_LOSS,
+    ROUND(
+        TOTAL_LOSS * 100.0 /
+        SUM(TOTAL_LOSS) OVER (),
+        2
+    ) AS LOSS_PERCENTAGE
+FROM LOSSES
+ORDER BY TOTAL_LOSS DESC;
+
+--DISTANCE IMPACT ON PROFIT
+--Average profit decreases from ₹513.56 for orders within 2 KM to ₹449.25 for orders above 8 KM, 
+--representing a decline of approximately 12.5%.
+SELECT 
+		CASE
+			WHEN DISTANCE_KM <= 2 THEN '0-2 KM'
+			WHEN DISTANCE_KM <= 5 THEN '2-5 KM'
+			WHEN DISTANCE_KM <= 8 THEN '5-8 KM'
+			ELSE '8+ KM'
+			END AS DISTANCE_BUCKET,
+AVG(PROFIT) AS AVG_PROFIT
+FROM COMM
+GROUP BY DISTANCE_BUCKET
+ORDER BY AVG_PROFIT;
+
+
+--DISSCOUNT IMPACT ON PROFIT
+SELECT DISCOUNT_APPLIED,AVG(ORDER_VALUE),AVG(PROFIT) AS AVG_PROFIT 
+FROM COMM
+GROUP BY DISCOUNT_APPLIED;
+
+
+--PARETO LOSS ANALYSIS
+--Top 20% of cities generate 80% of losses.
+SELECT CITY,SUM(PROFIT)AS TOTAL_PROFIT
+FROM COMM
+GROUP BY CITY
+ORDER BY TOTAL_PROFIT ASC;
+
+--What causes losses?
+SELECT
+CASE
+    WHEN ORDER_VALUE < 300 THEN 'LOW VALUE ORDER'
+    WHEN DISTANCE_KM > 8 THEN 'LONG DISTANCE'
+    WHEN DISCOUNT_APPLIED THEN 'DISCOUNTED'
+    ELSE 'NORMAL'
+END AS DRIVER,
+AVG(PROFIT)
+FROM COMM
+GROUP BY DRIVER
+ORDER BY AVG(PROFIT);
+-------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+# Key Insight
+ 
+## Profitability
+ 
+- **7.84% of all orders are loss-making**, indicating a meaningful share of transactions actively erode margin rather than just underperforming.
+- **Beverages (14.57%), Household (14.37%), and Groceries (14.30%)** are the three largest contributors to losses, together accounting for nearly 43% of total loss value.
+- **Haridwar, Jaipur, and Amritsar** contribute **41.37%** of total losses, showing that profitability issues are concentrated in a small number of cities rather than spread evenly — a classic Pareto pattern.
+- **Average profit drops by approximately 12.5%** as delivery distance increases, falling from **₹513.56** for orders within 0–2 KM to **₹449.25** for orders beyond 8 KM — a clear sign that longer deliveries quietly erode margin.
+- **Discounted orders carry a distinctly different profit profile** than full-price orders, confirming that discounts boost order value at the cost of margin rather than improving profitability overall.
