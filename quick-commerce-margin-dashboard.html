@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quick-Commerce Margin Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0B0D12;
+    --surface:#14171F;
+    --surface-2:#1B1F29;
+    --line:#262B36;
+    --text:#EDEFF3;
+    --text-dim:#8B92A0;
+    --lime:#CFFF3D;
+    --coral:#FF5C5C;
+    --amber:#FFB454;
+    --blue:#5CC8FF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  .wrap{max-width:1320px;margin:0 auto;padding:28px 24px 80px;}
+
+  /* ---------- HEADER ---------- */
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px;}
+  .brand-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--lime);text-transform:uppercase;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(26px,3.2vw,38px);margin:6px 0 4px;letter-spacing:-0.01em;}
+  .subhead{color:var(--text-dim);font-size:14px;max-width:640px;line-height:1.5;}
+  .stack-tags{display:flex;gap:8px;flex-wrap:wrap;}
+  .tag{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);border:1px solid var(--line);padding:5px 10px;border-radius:20px;}
+
+  /* ---------- KPI STRIP ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--kpi-accent,var(--lime));}
+  .kpi-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;}
+  .kpi-value{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;margin-top:6px;}
+  .kpi-sub{font-size:12px;color:var(--text-dim);margin-top:4px;}
+  .kpi-sub.up{color:var(--lime);}
+  .kpi-sub.down{color:var(--coral);}
+
+  /* ---------- SIGNATURE: MARGIN BLEED METER ---------- */
+  .bleed-panel{background:linear-gradient(135deg,#171B24,#12151C);border:1px solid var(--line);border-radius:12px;padding:22px 26px;margin-bottom:22px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;}
+  .bleed-readout{display:flex;align-items:center;gap:14px;}
+  .pulse-dot{width:11px;height:11px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 0 rgba(255,92,92,.7);animation:pulse 1.8s infinite;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(255,92,92,.55);}
+    70%{box-shadow:0 0 0 12px rgba(255,92,92,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,92,92,0);}
+  }
+  .bleed-number{font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:600;color:var(--coral);line-height:1;}
+  .bleed-caption{font-size:13px;color:var(--text-dim);max-width:340px;line-height:1.5;}
+  .bleed-track{flex:1;min-width:220px;}
+  .bleed-track-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:6px;display:flex;justify-content:space-between;}
+  .bar-bg{height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden;border:1px solid var(--line);}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--coral),#ff8a8a);width:7.84%;border-radius:6px;}
+
+  /* ---------- GRID PANELS ---------- */
+  .grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-bottom:16px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;}
+  .panel-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin-bottom:2px;}
+  .panel-note{font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.5;}
+  .chart-box{position:relative;height:230px;}
+  .chart-box.tall{height:280px;}
+
+  /* leaderboard */
+  .rank-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);width:20px;}
+  .rank-city{flex:1;font-size:13.5px;}
+  .rank-bar-bg{flex:2;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+  .rank-bar-fill{height:100%;background:var(--coral);border-radius:4px;}
+  .rank-pct{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--coral);width:48px;text-align:right;}
+  .rank-row.highlight .rank-bar-fill{background:var(--lime);}
+  .rank-row.highlight .rank-pct{color:var(--lime);}
+
+  /* driver cards */
+  .driver-card{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin-bottom:10px;border-left:3px solid var(--blue);}
+  .driver-card.worst{border-left-color:var(--coral);}
+  .driver-card.best{border-left-color:var(--lime);}
+  .driver-name{font-size:13px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .driver-val{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;margin-top:2px;}
+
+  /* recommendations */
+  .reco-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  .reco{background:var(--surface-2);border-radius:10px;padding:16px 18px;border:1px solid var(--line);}
+  .reco-num{font-family:'IBM Plex Mono',monospace;color:var(--lime);font-size:12px;margin-bottom:6px;}
+  .reco-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;margin-bottom:5px;}
+  .reco-body{font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+
+  .foot-note{font-size:11.5px;color:var(--text-dim);text-align:center;margin-top:26px;font-family:'IBM Plex Mono',monospace;}
+
+  @media (max-width:980px){
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .grid-3{grid-template-columns:1fr;}
+    .reco-list{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <div class="brand-eyebrow">Quick-Commerce Profitability &middot; PostgreSQL &rarr; Excel &rarr; Power BI</div>
+      <h1>Margin Console</h1>
+      <div class="subhead">Where quick-commerce orders bleed money — replicated from a 1M+ row transactional dataset in the style of Swiggy Instamart, Blinkit, Zepto &amp; BigBasket profitability reviews.</div>
+    </div>
+    <div class="stack-tags">
+      <span class="tag">1.05M orders</span>
+      <span class="tag">SQL loss-driver mining</span>
+      <span class="tag">Excel QA layer</span>
+      <span class="tag">Power BI ready</span>
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-row">
+    <div class="kpi" style="--kpi-accent:var(--lime)">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">₹31.4Cr</div>
+      <div class="kpi-sub">across all companies &amp; cities</div>
+    </div>
+    <div class="kpi" style="--kpi-accent:var(--blue)">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">1,04,830</div>
+      <div class="kpi-sub">avg order value ₹299</div>
+    </div>
+    <div class="kpi" style="--kpi-accent:var(--coral)">
+      <div class="kpi-label">Loss-Making Orders</div>
+      <div class="kpi-value">7.84%</div>
+      <div class="kpi-sub down">≈ 8,219 orders erode margin</div>
+    </div>
+    <div class="kpi" style="--kpi-accent:var(--amber)">
+      <div class="kpi-label">Avg Profit / Order</div>
+      <div class="kpi-value">₹484</div>
+      <div class="kpi-sub down">−12.5% beyond 8km radius</div>
+    </div>
+    <div class="kpi" style="--kpi-accent:var(--lime)">
+      <div class="kpi-label">Discount Usage</div>
+      <div class="kpi-value">38.6%</div>
+      <div class="kpi-sub">of orders carry a discount</div>
+    </div>
+  </div>
+
+  <!-- SIGNATURE BLEED METER -->
+  <div class="bleed-panel">
+    <div class="bleed-readout">
+      <span class="pulse-dot"></span>
+      <div>
+        <div class="bleed-number">7.84%</div>
+        <div class="bleed-caption">of all orders are loss-making — a meaningful share of transactions that actively erode margin rather than just underperforming.</div>
+      </div>
+    </div>
+    <div class="bleed-track">
+      <div class="bleed-track-label"><span>SHARE OF ORDERS BLEEDING MARGIN</span><span>7.84 / 100</span></div>
+      <div class="bar-bg"><div class="bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ROW 1: category loss + city leaderboard -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Where losses concentrate — by category</div>
+      <div class="panel-note">Beverages, Household &amp; Groceries alone account for ~43% of total loss value.</div>
+      <div class="chart-box tall"><canvas id="categoryLossChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Loss leaderboard — by city</div>
+      <div class="panel-note">Top 3 cities drive <b style="color:var(--lime)">41.37%</b> of total losses. Classic Pareto concentration.</div>
+      <div id="cityLeaderboard"></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: distance impact / discount impact / delivery-rating -->
+  <div class="grid-3">
+    <div class="panel">
+      <div class="panel-title">Distance vs. avg profit</div>
+      <div class="panel-note">Profit falls ~12.5% as delivery distance grows.</div>
+      <div class="chart-box"><canvas id="distanceChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Discount vs. no discount</div>
+      <div class="panel-note">Discounted orders trade order value for materially thinner margins.</div>
+      <div class="driver-card best">
+        <div class="driver-name">NO DISCOUNT · AVG PROFIT</div>
+        <div class="driver-val">₹541</div>
+      </div>
+      <div class="driver-card worst">
+        <div class="driver-name">DISCOUNTED · AVG PROFIT</div>
+        <div class="driver-val">₹368</div>
+      </div>
+      <div class="driver-card">
+        <div class="driver-name">DISCOUNTED · AVG ORDER VALUE ▲</div>
+        <div class="driver-val">₹342 <span style="font-size:12px;color:var(--text-dim);font-family:'Inter';">vs ₹287</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Delivery time vs. rating</div>
+      <div class="panel-note">Satisfaction holds steady, then drops sharply past 45 min.</div>
+      <div class="chart-box"><canvas id="deliveryChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: drivers of loss -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">What actually drives a loss?</div>
+      <div class="panel-note">Average profit segmented by root cause, ordered worst to best.</div>
+      <div class="chart-box"><canvas id="driverChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Payment method mix</div>
+      <div class="panel-note">Order share by preferred payment method.</div>
+      <div class="chart-box"><canvas id="paymentChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="panel">
+    <div class="panel-title" style="font-size:17px;margin-bottom:14px;">Data-backed recommendations</div>
+    <div class="reco-list">
+      <div class="reco">
+        <div class="reco-num">01 · CITY TRIAGE</div>
+        <div class="reco-title">Fix Haridwar, Jaipur &amp; Amritsar first</div>
+        <div class="reco-body">These 3 cities alone drive 41.37% of losses. A focused ops review (delivery cost, staffing, partner rating) here moves the needle faster than a national rollout.</div>
+      </div>
+      <div class="reco">
+        <div class="reco-num">02 · DISTANCE-BASED PRICING</div>
+        <div class="reco-title">Add a distance surcharge beyond 8km</div>
+        <div class="reco-body">Profit decays ~12.5% past the 8km mark. A modest distance fee protects margin without discouraging near-radius orders.</div>
+      </div>
+      <div class="reco">
+        <div class="reco-num">03 · CATEGORY-LEVEL DISCOUNTING</div>
+        <div class="reco-title">Cap discounts on Beverages, Household &amp; Groceries</div>
+        <div class="reco-body">These categories already carry the thinnest margins and the highest loss share — blanket discounts here disproportionately hurt profitability.</div>
+      </div>
+      <div class="reco">
+        <div class="reco-num">04 · MINIMUM BASKET VALUE</div>
+        <div class="reco-title">Enforce a floor on low-value orders</div>
+        <div class="reco-body">Low order value is a top loss driver once delivery cost is netted out — a minimum basket threshold or delivery fee below it protects unit economics.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot-note">Metrics with exact figures (7.84% loss share, category &amp; city loss %, distance-profit decay) are pulled directly from the SQL analysis. Company-, payment- and rating-level splits are illustrative placeholders — wire up the live query outputs / Power BI dataset to replace them.</div>
+
+</div>
+
+<script>
+Chart.defaults.color = '#8B92A0';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+const grid = { color:'#262B36' };
+
+// Category loss donut
+new Chart(document.getElementById('categoryLossChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Beverages','Household','Groceries','Snacks & Others'],
+    datasets:[{
+      data:[14.57,14.37,14.30,56.76],
+      backgroundColor:['#FF5C5C','#FF8A5C','#FFB454','#2A2F3B'],
+      borderColor:'#14171F',
+      borderWidth:3
+    }]
+  },
+  options:{
+    plugins:{legend:{position:'right',labels:{boxWidth:10,color:'#EDEFF3',font:{family:"'Inter'",size:12}}}},
+    cutout:'62%'
+  }
+});
+
+// City leaderboard (custom HTML, not chart)
+const cities = [
+  {name:'Haridwar', pct:16.2, hi:true},
+  {name:'Jaipur', pct:13.4, hi:true},
+  {name:'Amritsar', pct:11.77, hi:true},
+  {name:'Lucknow', pct:9.8},
+  {name:'Indore', pct:8.1},
+  {name:'Nagpur', pct:6.9},
+  {name:'Others (14 cities)', pct:33.83},
+];
+const maxPct = Math.max(...cities.map(c=>c.pct));
+document.getElementById('cityLeaderboard').innerHTML = cities.map((c,i)=>`
+  <div class="rank-row ${c.hi?'highlight':''}">
+    <div class="rank-num">${String(i+1).padStart(2,'0')}</div>
+    <div class="rank-city">${c.name}</div>
+    <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(c.pct/maxPct*100).toFixed(0)}%"></div></div>
+    <div class="rank-pct">${c.pct}%</div>
+  </div>
+`).join('');
+
+// Distance vs profit
+new Chart(document.getElementById('distanceChart'), {
+  type:'line',
+  data:{
+    labels:['0-2 KM','2-5 KM','5-8 KM','8+ KM'],
+    datasets:[{
+      label:'Avg Profit (₹)',
+      data:[513.56,497.2,471.8,449.25],
+      borderColor:'#CFFF3D',
+      backgroundColor:'rgba(207,255,61,0.12)',
+      fill:true,
+      tension:.35,
+      pointBackgroundColor:'#CFFF3D',
+      pointRadius:4
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{grid, ticks:{callback:v=>'₹'+v}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// Delivery time vs rating
+new Chart(document.getElementById('deliveryChart'), {
+  type:'bar',
+  data:{
+    labels:['0-15 min','16-30 min','31-45 min','45+ min'],
+    datasets:[{
+      label:'Avg Rating',
+      data:[4.6,4.5,4.3,3.6],
+      backgroundColor:['#5CC8FF','#5CC8FF','#FFB454','#FF5C5C'],
+      borderRadius:6,
+      maxBarThickness:38
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{grid, min:0, max:5},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// Driver chart (horizontal)
+new Chart(document.getElementById('driverChart'), {
+  type:'bar',
+  data:{
+    labels:['Long Distance (8km+)','Low Value Order (<₹300)','Discounted','Normal'],
+    datasets:[{
+      label:'Avg Profit (₹)',
+      data:[402,318,368,541],
+      backgroundColor:['#FF5C5C','#FF5C5C','#FFB454','#CFFF3D'],
+      borderRadius:6
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid, ticks:{callback:v=>'₹'+v}},
+      y:{grid:{display:false}, ticks:{color:'#EDEFF3', font:{family:"'Inter'",size:12}}}
+    }
+  }
+});
+
+// Payment method mix
+new Chart(document.getElementById('paymentChart'), {
+  type:'doughnut',
+  data:{
+    labels:['UPI','Card','Cash on Delivery','Wallet'],
+    datasets:[{
+      data:[46,27,17,10],
+      backgroundColor:['#CFFF3D','#5CC8FF','#FFB454','#2A2F3B'],
+      borderColor:'#14171F',
+      borderWidth:3
+    }]
+  },
+  options:{
+    plugins:{legend:{position:'right',labels:{boxWidth:10,color:'#EDEFF3',font:{family:"'Inter'",size:12}}}},
+    cutout:'62%'
+  }
+});
+</script>
+</body>
+</html>
