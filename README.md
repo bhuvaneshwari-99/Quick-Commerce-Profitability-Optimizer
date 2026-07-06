@@ -1,4 +1,4 @@
-# Quick_Commerce_Profitability_Optimizer
+# Margin Console: Diagnosing Profit Leaks in Quick-Commerce
 Data Analytics Project analyzing order-level profitability for quick-commerce platforms using SQL, Excel,Python (EDA,Statistical) and Power BI.
 -
 
@@ -45,15 +45,24 @@ The goal is to identify which orders, products, and locations are losing money �
  Through SQL analysis of the dataset, the following key insights were identified:
 ## Profitability
  
-- **7.84% of all orders are loss-making**, indicating a meaningful share of transactions actively erode margin rather than just underperforming.
-- **Beverages (14.57%), Household (14.37%), and Groceries (14.30%)** are the three largest contributors to losses, together accounting for nearly 43% of total loss value.
-- **Haridwar, Jaipur, and Amritsar** contribute **41.37%** of total losses, showing that profitability issues are concentrated in a small number of cities rather than spread evenly — a classic Pareto pattern.
-- **Average profit drops by approximately 12.5%** as delivery distance increases, falling from **₹513.56** for orders within 0–2 KM to **₹449.25** for orders beyond 8 KM — a clear sign that longer deliveries quietly erode margin.
-- **Discounted orders carry a distinctly different profit profile** than full-price orders, confirming that discounts boost order value at the cost of margin rather than improving profitability overall.
+## 🔑 Key Insights
+
+- **Loss is geographically concentrated, not category-driven.**
+  Top 3 cities (Haridwar, Jaipur, Kolkata) account for **41.37%** of total losses — a classic Pareto/80-20 pattern. In contrast, product categories show near-uniform loss distribution (~14% each), indicating city-level operational issues, not a specific product line.
+
+- **Delivery speed is the strongest profit lever — not delivery quality.**
+  Orders delivered in 0-10 minutes are **~2x more profitable** than 31-40 minute orders, while delivery partner rating shows **negligible correlation with profit** (under 1% variance across ratings 2-5). This flips the intuitive assumption that "better-rated partners = better margins."
+
+- **Discounting is broadly flat across customer segments.**
+  Discount usage sits around **~40%** for every age group, with no single demographic disproportionately driving losses — ruling out age-targeted discount strategy as a quick fix.
+
+- **Discounts and delivery costs erode ~21% of revenue** before it reaches net profit, based on the revenue-to-net-profit waterfall breakdown.
+
+- **Payment method reveals a hidden risk pattern** *(pending 100%-stacked fix)* — Cash on Delivery orders may carry a disproportionately higher loss share versus digital payments, suggesting a COD-specific cost/risk exposure worth flagging operationally.
 ---
 ## 📬 Contact
 
-**Author:** Bhuvaneshwari L
+Bhuvaneshwari L
 📧 Email: lbhuvaneshwari729@gmail.com
 
 🌐 LinkedIn: https://www.linkedin.com/in/bhuvaneshwaril/
