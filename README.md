@@ -30,8 +30,8 @@ The goal is to identify which orders, products, and locations are losing money â
 | Database                        | PostgreSQL                                 |
 | SQL IDE                         | pgAdmin / DBeaver                          |
 | Programming Language            | Python                                     |
-| Python Environment              | Google Colab                               |
-| Data Analysis                   | Pandas, NumPy                              |
+| Python Environment              | Jupyter NoteBook                           |
+| Data Analysis                   | Pandas, NumPy,Matplotlib,Seaborn           |
 | Statistics                      | Descriptive Statistics, Hypothesis Testing |
 | Experimentation                 | A/B Testing                                |
 | Exploratory Data Analysis (EDA) | Pandas, Matplotlib, Seaborn                |
